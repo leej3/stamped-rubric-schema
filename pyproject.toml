@@ -1,0 +1,9 @@
+[project]
+name = "stamped-rubric-schema"
+version = "0.1.0"
+description = "Versioned STAMPED rubric and portable multi-reviewer assessment contracts"
+requires-python = ">=3.11"
+dependencies = ["jsonschema>=4.23,<5"]
+
+[dependency-groups]
+dev = ["linkml>=1.9,<2", "pre-commit>=4,<5"]

@@ -1,0 +1,358 @@
+id: urn:stamped:rubric:model:0.1.0
+name: stamped-rubric
+title: STAMPED Rubric and Assessment Model
+description: LinkML semantic model for manuscript-derived rubric content and multi-reviewer
+  assessment bundles. JSON Schema defines the exact wire representation, including
+  explicit nulls and dictionary keys; scripts/validate.py checks cross-record invariants.
+license: CC-BY-4.0
+version: 0.1.0
+prefixes:
+  linkml: https://w3id.org/linkml/
+  stamped: 'urn:stamped:rubric:'
+default_prefix: stamped
+imports:
+- linkml:types
+enums:
+  DimensionCode:
+    permissible_values:
+      S: {}
+      T: {}
+      A: {}
+      M: {}
+      P: {}
+      E: {}
+      D: {}
+  RequirementLevel:
+    permissible_values:
+      must: {}
+      should: {}
+      may: {}
+  SourceStatus:
+    permissible_values:
+      provisional: {}
+      pinned: {}
+  AccessStatus:
+    permissible_values:
+      accessible: {}
+      inaccessible: {}
+      not_checked: {}
+  EvidenceRating:
+    permissible_values:
+      insufficient: {}
+      partial: {}
+      sufficient: {}
+      conflicting: {}
+  Confidence:
+    permissible_values:
+      low: {}
+      moderate: {}
+      high: {}
+  Observation:
+    permissible_values:
+      observed: {}
+      not_assessed: {}
+      not_findable: {}
+      inaccessible: {}
+      absent: {}
+classes:
+  ManuscriptSource:
+    description: Manuscript revision actually inspected; provisional until final reconciliation.
+    attributes:
+      repository:
+        range: string
+        required: true
+      revision:
+        range: string
+        required: true
+        pattern: ^[0-9a-f]{40}$
+      path:
+        range: string
+        required: true
+      status:
+        range: SourceStatus
+        required: true
+  Dimension:
+    description: One of the seven STAMPED dimensions.
+    attributes:
+      id:
+        range: DimensionCode
+        required: true
+        identifier: true
+      label:
+        range: string
+        required: true
+      description:
+        range: string
+        required: true
+  Principle:
+    description: Normative statement transcribed from the manuscript.
+    attributes:
+      code:
+        range: string
+        required: true
+        identifier: true
+        pattern: ^[STAMPED]\.[1-9][0-9]*$
+      dimension:
+        range: DimensionCode
+        required: true
+      level:
+        range: RequirementLevel
+        required: true
+      statement:
+        range: string
+        required: true
+  Anchor:
+    description: Observable criterion-specific fulfillment level; ordinal, not evidence
+      confidence.
+    attributes:
+      value:
+        range: integer
+        required: true
+        minimum_value: 0
+        maximum_value: 3
+      label:
+        range: string
+        required: true
+      description:
+        range: string
+        required: true
+  SourceLocation:
+    description: Trace from criterion to manuscript passage.
+    attributes:
+      section:
+        range: string
+        required: true
+      locator:
+        range: string
+        required: true
+  Criterion:
+    description: Atomic scored criterion derived strictly from STAMPED.
+    attributes:
+      id:
+        range: string
+        required: true
+        identifier: true
+        pattern: ^[STAMPED]-[0-9]{2,}$
+      dimension:
+        range: DimensionCode
+        required: true
+      principles:
+        range: string
+        required: true
+        multivalued: true
+      title:
+        range: string
+        required: true
+      question:
+        range: string
+        required: true
+      rationale:
+        range: string
+        required: true
+      evidence_guidance:
+        range: string
+        required: true
+      anchors:
+        range: Anchor
+        required: true
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
+      source:
+        range: SourceLocation
+        required: true
+        inlined: true
+  Rubric:
+    description: Versioned rubric; source, criteria, and anchors define its interpretation.
+    attributes:
+      version:
+        range: string
+        required: true
+      title:
+        range: string
+        required: true
+      description:
+        range: string
+        required: true
+      source:
+        range: ManuscriptSource
+        required: true
+        inlined: true
+      dimensions:
+        range: Dimension
+        required: true
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
+      principles:
+        range: Principle
+        required: true
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
+      criteria:
+        range: Criterion
+        required: true
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
+  ResearchObject:
+    description: Entry point and bounded revision of the object being assessed.
+    attributes:
+      title:
+        range: string
+        required: true
+      locator:
+        range: string
+        required: true
+      revision:
+        range: string
+      scope:
+        range: string
+  Reviewer:
+    description: Contributor identity; no human versus agent behavioral distinction.
+    attributes:
+      id:
+        range: string
+        required: true
+      name:
+        range: string
+        required: true
+  Evidence:
+    description: Reviewer-provided evidence; does not contribute points.
+    attributes:
+      locator:
+        range: string
+        required: true
+      description:
+        range: string
+      discovery_path:
+        range: string
+      access_status:
+        range: AccessStatus
+        required: true
+  Response:
+    description: Response keyed by criterion ID in assessment JSON. Null score means
+      unanswered.
+    attributes:
+      criterion_id:
+        range: string
+        identifier: true
+        description: Implicit dictionary key; omitted in JSON response values.
+      score:
+        range: integer
+        minimum_value: 0
+        maximum_value: 3
+        description: Must equal an anchor value, or explicit JSON null for unanswered.
+      evidence:
+        range: Evidence
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
+      rationale:
+        range: string
+      evidence_rating:
+        range: EvidenceRating
+      confidence:
+        range: Confidence
+      feedback:
+        range: string
+      priority:
+        range: boolean
+      observation:
+        range: Observation
+  Weights:
+    description: Nonnegative dimension weights. At least one positive; defaults all
+      one.
+    attributes:
+      S:
+        range: double
+        required: true
+        minimum_value: 0
+        maximum_value: 1000000
+      T:
+        range: double
+        required: true
+        minimum_value: 0
+        maximum_value: 1000000
+      A:
+        range: double
+        required: true
+        minimum_value: 0
+        maximum_value: 1000000
+      M:
+        range: double
+        required: true
+        minimum_value: 0
+        maximum_value: 1000000
+      P:
+        range: double
+        required: true
+        minimum_value: 0
+        maximum_value: 1000000
+      E:
+        range: double
+        required: true
+        minimum_value: 0
+        maximum_value: 1000000
+      D:
+        range: double
+        required: true
+        minimum_value: 0
+        maximum_value: 1000000
+  Assessment:
+    description: Independent contribution, optionally reviewing another assessment
+      without replacing it.
+    attributes:
+      id:
+        range: string
+        required: true
+        identifier: true
+      reviewer:
+        range: Reviewer
+        required: true
+        inlined: true
+      created_at:
+        range: datetime
+        required: true
+      updated_at:
+        range: datetime
+        required: true
+      review_of:
+        range: string
+        description: Another assessment ID in this bundle, or JSON null. Cycles prohibited.
+      weights:
+        range: Weights
+        required: true
+        inlined: true
+      responses:
+        range: Response
+        multivalued: true
+        inlined: true
+      comment:
+        range: string
+  AssessmentBundle:
+    description: Portable multi-reviewer report for one research object and rubric
+      revision.
+    tree_root: true
+    attributes:
+      format_version:
+        range: string
+        required: true
+      rubric_version:
+        range: string
+        required: true
+      rubric_sha256:
+        range: string
+        pattern: ^[0-9a-f]{64}$
+        description: SHA-256 of exact rubric.json bytes; recommended on export.
+      research_object:
+        range: ResearchObject
+        required: true
+        inlined: true
+      assessments:
+        range: Assessment
+        required: true
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
